@@ -1239,7 +1239,7 @@ version = "0.7.4"
 description = "Mypyc runtime library"
 optional = false
 python-versions = ">=3.9"
-groups = ["main"]
+groups = ["main", "dev"]
 markers = "platform_python_implementation != \"PyPy\""
 files = [
     {file = "librt-0.7.4-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:dc300cb5a5a01947b1ee8099233156fdccd5001739e5f596ecfbc0dab07b5a3b"},
@@ -1573,7 +1573,7 @@ version = "1.19.1"
 description = "Optional static typing for Python"
 optional = false
 python-versions = ">=3.9"
-groups = ["main"]
+groups = ["main", "dev"]
 files = [
     {file = "mypy-1.19.1-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:5f05aa3d375b385734388e844bc01733bd33c644ab48e9684faa54e5389775ec"},
     {file = "mypy-1.19.1-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:022ea7279374af1a5d78dfcab853fe6a536eebfda4b59deab53cd21f6cd9f00b"},
@@ -3319,7 +3319,7 @@ version = "4.15.0"
 description = "Backported and Experimental Type Hints for Python 3.9+"
 optional = false
 python-versions = ">=3.9"
-groups = ["main"]
+groups = ["main", "dev"]
 files = [
     {file = "typing_extensions-4.15.0-py3-none-any.whl", hash = "sha256:f0fa19c6845758ab08074a0cfa8b7aecb71c999ca73d62883bc25cc018c4e548"},
     {file = "typing_extensions-4.15.0.tar.gz", hash = "sha256:0cea48d173cc12fa28ecabc3b837ea3cf6f38c6d1136f85cbaaf598984861466"},
@@ -3640,29 +3640,7 @@ enabler = ["pytest-enabler (>=2.2)"]
 test = ["big-O", "jaraco.functools", "jaraco.itertools", "jaraco.test", "more_itertools", "pytest (>=6,!=8.1.*)", "pytest-ignore-flaky"]
 type = ["pytest-mypy"]
 
-[[package]]
-name = "zuban"
-version = "0.3.0"
-description = "Zuban - The Zuban Language Server"
-optional = false
-python-versions = ">=3.7"
-groups = ["dev"]
-files = [
-    {file = "zuban-0.3.0-py3-none-macosx_10_12_x86_64.whl", hash = "sha256:38ca2228b0ff7ee1db72dc91a91d7c581ad22c598b3fb5c43674b6e3ff6e2744"},
-    {file = "zuban-0.3.0-py3-none-macosx_11_0_arm64.whl", hash = "sha256:6ee8f551169acb090c9014a2803bf85f4e55d0e891b78975107caa4e566cac32"},
-    {file = "zuban-0.3.0-py3-none-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:6577bb912817b53f4c463e3543d7236eefe61e00ecb200e9af71b9d64371de73"},
-    {file = "zuban-0.3.0-py3-none-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:2f097b08ab194a6026efa5913dfd097c31540e1df914830aa05b1327b3e84e23"},
-    {file = "zuban-0.3.0-py3-none-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:df589dd0c51c4652896f778969cd19d47aecd0e5bffb38d2e1db6a6474be6253"},
-    {file = "zuban-0.3.0-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:a70477dd7c43f45568c86776c933c066c545dbb52f744b87804599f257ddcf69"},
-    {file = "zuban-0.3.0-py3-none-musllinux_1_2_aarch64.whl", hash = "sha256:c2cc4b707faa4d298c0e7f2ab720fec15452370d01084fb8f3f67b637a4773e7"},
-    {file = "zuban-0.3.0-py3-none-musllinux_1_2_armv7l.whl", hash = "sha256:997e3b6e2191a78d5814ebac4927a26bc639ca83f9ed4ae773eb2bb8c5892e87"},
-    {file = "zuban-0.3.0-py3-none-musllinux_1_2_i686.whl", hash = "sha256:b36d4811bd3a8d90e6154eca1341c09a36bcf2cdf63426e4a5d22f32db8a1092"},
-    {file = "zuban-0.3.0-py3-none-musllinux_1_2_x86_64.whl", hash = "sha256:6c2027f9a1714fcb89511cc6e610f6826c9ca9bad4fd7a48a380872ad64fef8f"},
-    {file = "zuban-0.3.0-py3-none-win32.whl", hash = "sha256:82ca6528d593313a9bb8559dcf013a322eed8aa13f553d522e7fd9066e5e5e87"},
-    {file = "zuban-0.3.0-py3-none-win_amd64.whl", hash = "sha256:f4cb2ea16b1c863c28140dc3ea74b91e4914894ad30efb6bdd46a098aae77cc6"},
-]
-
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<4.0"
-content-hash = "81be3cbb726571786b186179f69b68552c8f7a69645892b21ed815e77e1b82fb"
+content-hash = "3e9dabbd2dda5d38bdba4dd05a7c531531ed5514727b17a096756ef80883007c"
