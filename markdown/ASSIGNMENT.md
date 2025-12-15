@@ -8,14 +8,16 @@ Welcome!  This exercise is your opportunity to show us how you reason about mess
 
 You will work with the public [Enron e-mail corpus](https://www.kaggle.com/datasets/wcukierski/enron-email-dataset/data) (≈ 0.5 M messages, ≈ 3 GB uncompressed).  Your tasks are:
 
-1. **Extraction & normalisation** – transform the raw `.mbox` files **and any nested/quoted messages they contain** into a structured dataset where *one row = one logical e-mail* (inline forwards/replies count as additional rows).  Each row must contain at minimum:
+1. **Extraction & normalisation** – transform the raw `.csv` files into parsd emails by splitting on `Message-Id` where *one row = one logical e-mail* (inline forwards/replies count as additional rows).  Each row must contain at minimum:
    * `id` (stable across executions), `date` (UTC ISO-8601), `subject` (original casing)
-   * Addresses: `from`, `to`, `cc`, `bcc` (each normalised to lower-case e-mail strings)
+   * `Message-ID` - primary means of JWZ Threading, the standard algorithm.
+   * `In-Reply-To` - also essential to most JWZ Threading
+   * Addresses - `from`, `to`, `cc`, `bcc` (each normalised to lower-case e-mail strings)
    * `body_clean` – *the logical body of that single email*, with quoted history removed
 
-2. **Threading algorithm** – assign a `thread_id` so that every message belonging to the same logical conversation shares the same identifier.  Use any combination of header fields and heuristics.
+3. **Threading algorithm** – use the standard [JWZ Threading algorithm]() to assign a `thread_id` so that every message belonging to the same logical conversation shares the same identifier in a tree structure.
 
-3. **Scale-up thought exercise** – in a separate file `design.md` (≈ 1 page) outline your thoughts on how you would scale a pipeline performing these operations to operate at **10 million+ e-mails per day** on AWS.
+4. **Scale-up thought exercise** – in a separate file `design.md` (≈ 1 page) outline your thoughts on how you would scale a pipeline performing these operations to operate at **10 million+ e-mails per day** on AWS.
 
 ---
 

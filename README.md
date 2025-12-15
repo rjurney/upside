@@ -142,7 +142,7 @@ isort upside tests
 flake8
 
 # Type checking
-zuban check upside tests
+mypy
 ```
 
 ## Project Structure
@@ -162,7 +162,7 @@ upside/
 
 ## Scale-Up Parsing Architecture
 
-I used PySpark to scale up from the start as much as possible - something I've advocated for 15 years. The challenge to parsing the emails is that we need to identify record boundaries before we can partition, but the Window / cumulative sum approach requires global ordering.
+I used PySpark to scale up from the start as much as possible - something I've advocated for 15 years, but only do when I expect to scale. The challenge to parsing the emails is that we need to identify record boundaries before we can partition, but the Window / cumulative sum approach requires global ordering.
 
 Options to partition (via Claude):
 
