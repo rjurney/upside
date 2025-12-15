@@ -3,7 +3,7 @@ name = "upside"
 version = "0.1.0"
 description = "Russell Jurney Homework Assignment on Enron Emails"
 authors = [
-    {name = "Russell Jurney",email = "russell.jurney@gmail.com"}
+    {name = "Russell Jurney", email = "russell.jurney@gmail.com"}
 ]
 license = {text = "MIT"}
 readme = "README.md"
