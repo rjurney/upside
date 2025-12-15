@@ -113,7 +113,7 @@ The pipeline produces structured data with the following fields:
 - **PySpark**: Distributed data processing
 - **Poetry**: Dependency management and packaging
 - **Click**: Command-line interface
-- **BAML**: LLM-based structured extraction for knowlwedge graph
+- **BAML**: LLM-based structured extraction for knowledge graph
 
 ## Development
 
