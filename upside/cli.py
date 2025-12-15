@@ -13,8 +13,7 @@ def main() -> None:
 
 
 @main.command()
-@click.pass_context
-def download(ctx: click.Context) -> None:
+def download() -> None:
     """Download the Enron email dataset from Kaggle."""
     click.echo("Downloading Enron email dataset from Kaggle...")
     path = download_enron_dataset()
