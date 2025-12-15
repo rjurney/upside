@@ -15,7 +15,7 @@ dependencies = [
     "kagglehub (>=0.3.0)",
     "click>=8.1.0,<9.0.0",
     "ipython (>=9.8.0,<10.0.0)",
-    "pyarrow (>=22.0.0,<23.0.0)",
+    "pyarrow (>=16.0.0,<17.0.0)",
     "mail-parser (>=4.1.4,<5.0.0)",
 ]
 
