@@ -1,0 +1,40 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pre-commit:*)",
+      "mcp__passage-of-time-mcp__current_datetime",
+      "mcp__pyspark-mcp__Run_SQL_query",
+      "mcp__pyspark-mcp__Read_first_N_lines_of_the_text_file",
+      "mcp__pyspark-mcp__Get_table_schema",
+      "Bash(astro dev:*)",
+      "Bash(cat:*)",
+      "Read(//Users/rjurney/Software/sparkdantic/src/sparkdantic/**)",
+      "Bash(python test:*)",
+      "Bash(docker:*)",
+      "Read(//private/tmp/articles/abzu_rss_backup_20250914_190448/**)",
+      "Read(//tmp/**)",
+      "Bash(pqrs schema:*)",
+      "Bash(comm:*)",
+      "mcp__pyspark-mcp__List_tables_in_the_current_catalog",
+      "Bash(pqrs head:*)",
+      "Bash(pqrs row-count:*)",
+      "Bash(~/.local/bin/pre-commit run)",
+      "Bash(python3:*)",
+      "mcp__applescript-mcp__applescript_execute",
+      "Bash(grep:*)",
+      "Bash(tee:*)",
+      "Bash(curl:*)",
+      "Bash(python graph.py:*)",
+      "WebSearch"
+    ],
+    "deny": [],
+    "ask": [],
+    "defaultMode": "acceptEdits"
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "applescript-mcp",
+    "kuzu",
+    "github"
+  ]
+}
