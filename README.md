@@ -9,12 +9,14 @@ This project extracts and normalizes emails from the Enron email dataset, includ
 ## Features
 
 - **Email Extraction & Normalization**: Transforms raw email data into structured records
+
   - Extracts message metadata (id, date, subject, from, to, cc, bcc)
   - Normalizes email addresses to lowercase
   - Removes quoted history to extract clean message bodies
   - Surfaces inline forwards/replies as separate rows
 
 - **Email Threading**: Groups related messages into conversation threads
+
   - Assigns stable `thread_id` to messages in the same conversation
   - Uses header fields and heuristics for thread detection
 
@@ -78,17 +80,17 @@ Run `poetry run upside --help` for more information on available commands.
 
 The pipeline produces structured data with the following fields:
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | string | Stable message identifier (consistent across executions) |
-| `date` | timestamp | UTC ISO-8601 timestamp |
-| `subject` | string | Email subject (original casing) |
-| `from` | string | Sender email address (lowercase) |
-| `to` | array[string] | Recipient email addresses (lowercase) |
-| `cc` | array[string] | CC recipients (lowercase) |
-| `bcc` | array[string] | BCC recipients (lowercase) |
-| `body_clean` | string | Message body with quoted history removed |
-| `thread_id` | string | Conversation thread identifier |
+| Field        | Type          | Description                                              |
+| ------------ | ------------- | -------------------------------------------------------- |
+| `id`         | string        | Stable message identifier (consistent across executions) |
+| `date`       | timestamp     | UTC ISO-8601 timestamp                                   |
+| `subject`    | string        | Email subject (original casing)                          |
+| `from`       | string        | Sender email address (lowercase)                         |
+| `to`         | array[string] | Recipient email addresses (lowercase)                    |
+| `cc`         | array[string] | CC recipients (lowercase)                                |
+| `bcc`        | array[string] | BCC recipients (lowercase)                               |
+| `body_clean` | string        | Message body with quoted history removed                 |
+| `thread_id`  | string        | Conversation thread identifier                           |
 
 ## Architecture
 
@@ -120,9 +122,6 @@ The pipeline produces structured data with the following fields:
 ```bash
 # Run all tests
 pytest tests/
-
-# Run specific test
-poetry run pytest tests/path_to_test.py::test_name
 ```
 
 ### Code Quality
@@ -161,22 +160,22 @@ upside/
 └── README.md              # This file
 ```
 
-## Scale-Up Architecture
+## Scale-Up Parsing Architecture
 
-See [design.md](design.md) for details on how this pipeline could be scaled to process 10+ million emails per day on AWS.
+I used PySpark to scale up from the start as much as possible - something I've advocated for 15 years. The challenge to parsing the emails is that we need to identify record boundaries before we can partition, but the Window / cumulative sum approach requires global ordering.
 
-## Known Limitations & Future Work
+Options to partition (via Claude):
 
-- **TODO**: Add more sophisticated quote detection for complex email chains
-- **TODO**: Improve thread detection for emails with modified subjects
-- **TODO**: Add support for attachments metadata
-- **TODO**: Implement entity extraction from email bodies
-- **TODO**: Add data quality metrics and validation
+1. Two-pass approach: First pass identifies all record start line_ids, broadcast that as a lookup table, then partition the second pass by record ranges.
+2. Partition by file path prefix: Extract the user directory (e.g., allen-p from allen-p/\_sent_mail/1.) from record start lines, but this only works after identifying boundaries.
+3. Pre-split the input file: Split emails.csv into chunks at record boundaries (lines starting with "[^"]+","Message-ID:), then let Spark partition naturally across files.
+4. Use spark_partition_id(): Let Spark partition the text file naturally, do local cumulative sums within each partition, then handle records that span partition boundaries. This is complex but scalable.
+5. Salted partitioning: After the first filter (identifying record starts), assign a salt/bucket based on a hash of the file path, then use that for downstream partitioning.
+
+Best practical approach: The two-pass approach or pre-splitting the file would be most reliable. The global window is expensive but acceptable for 517K records. For 10M+ emails/day (per the assignment), pre-splitting at ingest time would be the way to go.
 
 ## Time-Boxing Note
 
 This project was developed as a take-home assignment with a 4-hour time limit for coding. Some features may be incomplete or require further refinement. See TODOs in the code and the "Future Work" section above for planned improvements.
 
 ## License
-
-This is a demonstration project for interview purposes.
