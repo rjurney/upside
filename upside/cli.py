@@ -34,8 +34,7 @@ def download(ctx: click.Context) -> None:
     default="data/emails.parquet",
     help="Path to output Parquet file.",
 )
-@click.pass_context
-def parse(ctx: click.Context, input_path: str, output_path: str) -> None:
+def parse(input_path: str, output_path: str) -> None:
     """Parse the Enron emails CSV into Parquet format."""
     click.echo(f"Parsing emails from {input_path}...")
     output = load_emails(input_path, output_path)
