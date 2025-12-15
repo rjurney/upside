@@ -25,7 +25,10 @@
       "Bash(tee:*)",
       "Bash(curl:*)",
       "Bash(python graph.py:*)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(java:*)",
+      "Bash(/usr/libexec/java_home)",
+      "Bash(JAVA_HOME=/opt/homebrew/opt/openjdk@11 poetry run upside:*)"
     ],
     "deny": [],
     "ask": [],
