@@ -94,12 +94,10 @@ Test one iteration of the full email parsing pipeline each time you make changes
 
 ## File Formats
 
-Always save data in two formats:
+Always save data in Parquet format:
 
 1. Parquet - for efficient processing with Spark and Pandas without processing sub-folders manually.
-2. Single file JSON Lines - for debugging and manual inspection.
-
-When writing code that outputs data, ensure both formats are written unless explicitly instructed otherwise.
+2. CSV - only for small sample outputs for human inspection, never for intermediate processing.
 
 ## Development Guidelines
 
