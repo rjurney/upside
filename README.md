@@ -179,3 +179,5 @@ Best practical approach: The two-pass approach or pre-splitting the file would b
 This project was developed as a take-home assignment with a 4-hour time limit for coding. Some features may be incomplete or require further refinement. See TODOs in the code and the "Future Work" section above for planned improvements.
 
 ## License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
