@@ -8,7 +8,7 @@ Welcome!  This exercise is your opportunity to show us how you reason about mess
 
 You will work with the public [Enron e-mail corpus](https://www.kaggle.com/datasets/wcukierski/enron-email-dataset/data) (≈ 0.5 M messages, ≈ 3 GB uncompressed).  Your tasks are:
 
-1. **Extraction & normalisation** – transform the raw `.csv` files into parsd emails by splitting on `Message-Id` where *one row = one logical e-mail* (inline forwards/replies count as additional rows).  Each row must contain at minimum:
+1. **Extraction & normalisation** – transform the raw `.csv` files into parsed emails by splitting on `Message-Id` where *one row = one logical e-mail* (inline forwards/replies count as additional rows).  Each row must contain at minimum:
    * `id` (stable across executions), `date` (UTC ISO-8601), `subject` (original casing)
    * `Message-ID` - primary means of JWZ Threading, the standard algorithm.
    * `In-Reply-To` - also essential to most JWZ Threading
