@@ -1,0 +1,59 @@
+[project]
+name = "upside"
+version = "0.1.0"
+description = "Russell Jurney Homework Assignment on Enron Emails"
+authors = [
+    {name = "Russell Jurney",email = "russell.jurney@gmail.com"}
+]
+license = {text = "MIT"}
+readme = "README.md"
+requires-python = ">=3.12,<4.0"
+dependencies = [
+    "pyspark (>=4.0.1,<5.0.0)",
+    "pyspark-mcp @ git+https://github.com/rjurney/pyspark-mcp-server.git@rjurney/cli",
+    "kaggle (>=1.8.2,<2.0.0)",
+    "kagglehub (>=0.3.0)",
+    "click (>=8.1.0,<9.0.0)",
+    "ipython (>=9.8.0,<10.0.0)",
+]
+
+[project.scripts]
+upside = "upside.cli:main"
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 100
+target-version = ['py312']
+include = 'upside/.*\.py$'
+
+[tool.isort]
+profile = "black"
+src_paths = ["upside"]
+line_length = 100
+
+[tool.mypy]
+python_version = "3.12"
+files = ["upside", "tests"]
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_any_generics = true
+check_untyped_defs = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^9.0.2"
+black = "^25.12.0"
+pre-commit = "^4.5.0"
+zuban = "^0.3.0"
+isort = "^7.0.0"
+flake8 = "^7.3.0"
+
