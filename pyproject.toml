@@ -9,7 +9,7 @@ license = {text = "MIT"}
 readme = "README.md"
 requires-python = ">=3.12,<4.0"
 dependencies = [
-    "pyspark (>=3.5,<4.0.0)",
+    "pyspark>=3.5,<4.0.0",
     "pyspark-mcp @ git+https://github.com/rjurney/pyspark-mcp-server.git@rjurney/cli",
     "kaggle (>=1.8.2,<2.0.0)",
     "kagglehub (>=0.3.0)",
