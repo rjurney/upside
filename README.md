@@ -162,6 +162,8 @@ upside/
 
 ## Scale-Up Parsing Architecture
 
+### File Format Challenges
+
 The file format this is in is let's say... not ideal for distributed processing. I used PySpark to scale up from the start as much as possible - something I've advocated for more than a decade when building things that need to scale. The challenge to parsing the emails is that we need to identify record boundaries before we can partition, but the Window / cumulative sum approach requires global ordering. There's no way around this without pre-splitting the file or doing a two-pass approach.
 
 Here's what (edited by me) Claude has to say:
@@ -183,6 +185,10 @@ A two-pass approach or pre-splitting the file would be most reliable. I would sa
 Actually `cat -n` would be blazing fast for line numbering, then split on line numbers with overlap. A simple Python script could do this too. You could build on `cat -n data/emails.csv | sed 's/^[ \t]*\([0-9]*\)[ \t]*/\1,/' > /tmp/cat_emails.csv`.
 
 The global window is expensive but acceptable for 517K records. For 10M+ emails/day (per the assignment), pre-splitting at ingest time would be the way to go, although with PySpark we are talking about PySpark Streaming and mini-batches, something this implementation does not consider. We would need to use a graph database to connect to threaded emails. New content would come from a stream of emails, and we would need to update the threads in the graph database as new emails arrive.
+
+### JWZ Threading
+
+I lead the [GraphFrames])
 
 ## Time-Boxing Note
 

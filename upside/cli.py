@@ -4,6 +4,7 @@ import click
 
 from upside.download import download_enron_dataset
 from upside.parse.load import load_emails
+from upside.parse.thread import thread_emails
 
 
 @click.group()
@@ -57,11 +58,11 @@ def parse(input_path: str, output_path: str, error_path: str) -> None:
 @click.option(
     "--output",
     "output_path",
-    default="data/email_threads.parquet",
-    help="Path to output Parquet file with email threads.",
+    default="data/threaded_emails.parquet",
+    help="Path to output Parquet file with threaded emails.",
 )
-def threads(input_path: str, output_path: str) -> None:
-    """Generate email threads from parsed emails."""
-    click.echo(f"Generating email threads from {input_path}...")
-    # Placeholder for thread generation logic
-    click.echo(f"Email threads saved to: {output_path}")
+def thread(input_path: str, output_path: str) -> None:
+    """Thread emails using the JWZ threading algorithm."""
+    click.echo(f"Threading emails from {input_path}...")
+    output = thread_emails(input_path, output_path)
+    click.echo(f"Threaded emails saved to: {output}")
