@@ -5,12 +5,14 @@ from pathlib import Path
 from pyspark.sql import DataFrame, SparkSession, Window
 from pyspark.sql import functions as F
 
+from upside.parse.extract import extract_email_fields
+
 # Regex pattern to match the start of a new email record:
 # "file_path","Message-ID: ...
 RECORD_START_PATTERN = r'^"([^"]+)","(Message-ID: .*)$'
 
 
-def load_emails_spark(spark: SparkSession, input_path: str) -> DataFrame:
+def load_emails_spark(spark: SparkSession, input_path: str | Path) -> DataFrame:
     """Load the malformed Enron emails CSV into a Spark DataFrame.
 
     The CSV has a header of "file","message" where the message field spans
@@ -36,7 +38,7 @@ def load_emails_spark(spark: SparkSession, input_path: str) -> DataFrame:
         Spark DataFrame with columns: file, message
     """
     # Read file as text, preserving line order with monotonically_increasing_id
-    lines = spark.read.text(input_path).withColumn("line_id", F.monotonically_increasing_id())
+    lines = spark.read.text(str(input_path)).withColumn("line_id", F.monotonically_increasing_id())
 
     # Filter out the header line
     lines = lines.filter(~F.col("value").startswith('"file","message"'))
@@ -88,26 +90,34 @@ def load_emails_spark(spark: SparkSession, input_path: str) -> DataFrame:
 
 
 def load_emails(
-    input_path: str = "data/emails.csv", output_path: str = "data/emails.parquet"
-) -> str:
-    """Load emails from CSV and save as Parquet using PySpark.
+    input_path: str | Path = "data/emails.csv",
+    output_path: str | Path = "data/parsed_emails.parquet",
+    error_path: str | Path = "data/error_emails.parquet",
+) -> tuple[Path, Path]:
+    """Load emails from CSV, extract fields, and save as Parquet.
+
+    Successfully parsed emails are saved to output_path, while emails that
+    failed to parse are saved to error_path with the raw message for debugging.
 
     Parameters
     ----------
     input_path : str
         Path to the input emails.csv file.
     output_path : str
-        Path to save the output Parquet file.
+        Path to save successfully parsed emails.
+    error_path : str
+        Path to save emails that failed to parse.
 
     Returns
     -------
-    str
-        Path to the output Parquet file.
+    tuple[Path, Path]
+        Paths to the parsed and error Parquet files.
     """
     # Resolve paths relative to project root
     project_root = Path(__file__).parent.parent.parent
     input_file = project_root / input_path
     output_file = project_root / output_path
+    error_file = project_root / error_path
 
     # Create Spark session
     spark = (
@@ -118,22 +128,43 @@ def load_emails(
 
     print(f"Loading emails from {input_file}...")
 
-    # Load and parse emails
-    emails = load_emails_spark(spark, str(input_file))
+    # Load and parse raw emails
+    raw_emails = load_emails_spark(spark, input_file)
 
-    # Cache for count and write
+    print("Extracting email fields and generating thread IDs...")
+
+    # Extract structured fields and thread IDs
+    emails = extract_email_fields(raw_emails)
+
+    # Cache for filtering and writing
     emails.cache()
 
-    # Get count
-    count = emails.count()
-    print(f"Parsed {count:,} emails")
+    # Split into successful parses and errors
+    parsed_emails = emails.filter(F.col("parse_error").isNull())
+    error_emails = emails.filter(F.col("parse_error").isNotNull())
 
-    # Save as Parquet
-    print(f"Writing to {output_file}...")
-    emails.write.mode("overwrite").parquet(str(output_file))
+    # Get counts
+    parsed_count = parsed_emails.count()
+    error_count = error_emails.count()
+    total_count = parsed_count + error_count
 
-    print(f"Loaded {count:,} emails to {output_file}")
+    print(f"Processed {total_count:,} emails: {parsed_count:,} successful, {error_count:,} errors")
+
+    # Count unique threads in successful parses
+    thread_count = parsed_emails.select("thread_id").distinct().count()
+    print(f"Found {thread_count:,} unique threads")
+
+    # Save successfully parsed emails (drop parse_error column since it's always null)
+    print(f"Writing parsed emails to {output_file}...")
+    parsed_emails.drop("parse_error").write.mode("overwrite").parquet(str(output_file))
+    print(f"Saved {parsed_count:,} parsed emails to {output_file}")
+
+    # Save error emails if any exist
+    if error_count > 0:
+        print(f"Writing error emails to {error_file}...")
+        error_emails.write.mode("overwrite").parquet(str(error_file))
+        print(f"Saved {error_count:,} error emails to {error_file}")
 
     spark.stop()
 
-    return str(output_file)
+    return output_file, error_file

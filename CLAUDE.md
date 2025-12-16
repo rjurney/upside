@@ -104,6 +104,7 @@ Always save data in Parquet format:
 - Command Line Interfaces - at the end of your coding tasks, please alter the 'upside' CLI to accommodate the changes. It is a Python / Click CLI.
 - Separate logic from the CLI - separate the logic under `upside` and sub-modules from the command line interface (CLI) code in `upside.cli`. The CLI should only handle input/output from/to the user and should not contain any business logic. For example the module for `upside kg` should be in `upside.kg.*` and not in `upside.cli.kg`.
 - Help strings - never put the default option values in the help strings. The help strings should only describe what the option does, not what the default value is. The default values are already documented in the `config.yml` file and will be printed via the `@click.command(context_settings={"show_default": True})` decorator of each Click command.
+- Do not pass the Click context object (`ctx`) around unless absolutely necessary. Instead, pass only the parameters needed for each function. This will make the code more modular and easier to test.
 - Read the README - consult the README before taking action. The README contains information about the project and how to use it. If you need to add a new command or change an existing one, consult the README first.
 - Update the README - if appropriate, update the README with any new commands or changes to existing commands. The README should always reflect the current state of the project.
 - Use Poetry - use poetry for dependency management and packaging. Do not use pip or conda.

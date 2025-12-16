@@ -31,12 +31,19 @@ def download(ctx: click.Context) -> None:
 @click.option(
     "--output",
     "output_path",
-    default="data/emails.parquet",
-    help="Path to output Parquet file.",
+    default="data/parsed_emails.parquet",
+    help="Path to output Parquet file for successfully parsed emails.",
+)
+@click.option(
+    "--error",
+    "error_path",
+    default="data/error_emails.parquet",
+    help="Path to output Parquet file for emails that failed to parse.",
 )
 @click.pass_context
-def parse(ctx: click.Context, input_path: str, output_path: str) -> None:
+def parse(ctx: click.Context, input_path: str, output_path: str, error_path: str) -> None:
     """Parse the Enron emails CSV into Parquet format."""
     click.echo(f"Parsing emails from {input_path}...")
-    output = load_emails(input_path, output_path)
-    click.echo(f"Emails saved to: {output}")
+    parsed_output, error_output = load_emails(input_path, output_path, error_path)
+    click.echo(f"Parsed emails saved to: {parsed_output}")
+    click.echo(f"Error emails saved to: {error_output}")
