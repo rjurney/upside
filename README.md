@@ -164,15 +164,25 @@ upside/
 
 I used PySpark to scale up from the start as much as possible - something I've advocated for 15 years, but only do when I expect to scale. The challenge to parsing the emails is that we need to identify record boundaries before we can partition, but the Window / cumulative sum approach requires global ordering.
 
-Options to partition (via Claude):
+Here's what (edited by me) Claude has to say:
 
-1. Two-pass approach: First pass identifies all record start line_ids, broadcast that as a lookup table, then partition the second pass by record ranges.
-2. Partition by file path prefix: Extract the user directory (e.g., allen-p from allen-p/\_sent_mail/1.) from record start lines, but this only works after identifying boundaries.
-3. Pre-split the input file: Split emails.csv into chunks at record boundaries (lines starting with "[^"]+","Message-ID:), then let Spark partition naturally across files.
-4. Use spark_partition_id(): Let Spark partition the text file naturally, do local cumulative sums within each partition, then handle records that span partition boundaries. This is complex but scalable.
-5. Salted partitioning: After the first filter (identifying record starts), assign a salt/bucket based on a hash of the file path, then use that for downstream partitioning.
+```
+  window = Window.orderBy("line_id")
+  lines = lines.withColumn("record_id", F.sum("is_record_start").over(window))
 
-Best practical approach: The two-pass approach or pre-splitting the file would be most reliable. The global window is expensive but acceptable for 517K records. For 10M+ emails/day (per the assignment), pre-splitting at ingest time would be the way to go.
+  This is a global window with no partitionBy() - it's required to track record boundaries across the entire CSV file to extract the structure from the wonky CSV. We need cumulative sum across ALL lines to assign record IDs.
+
+  The problem: we don't know which user an email belongs to until AFTER we've:
+  1. Identified record boundaries (the "file_path","Message-ID: pattern)
+  2. Grouped the multi-line messages together
+  3. Extracted the file path
+```
+
+I would split the file using some utility that can split large files usin bytes into smaller chunks at line boundaries with overlap. Then each chunk can be processed independently in Spark, and we can partition by user after extracting the file path.
+
+Best practical approach: The two-pass approach or pre-splitting the file would be most reliable. The global window is expensive but acceptable for 517K records. For 10M+ emails/day (per the assignment), pre-splitting at ingest time would be the way to go. These must come from a stream - I would want the data to arrive in manageable partitions in the first place, but sometimes you don't get to specify, I know.
+
+Actually `cat -n` would be blazing fast for line numbering, then split on line numbers with overlap. A simple Python script could do this too.
 
 ## Time-Boxing Note
 

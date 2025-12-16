@@ -136,6 +136,9 @@ def load_emails(
     # Extract structured fields and thread IDs
     emails = extract_email_fields(raw_emails)
 
+    # Extract username from file path for partitioning (e.g., "allen-p" from "allen-p/_sent_mail/1.")
+    emails = emails.withColumn("user", F.split(F.col("file"), "/").getItem(0))
+
     # Cache for filtering and writing
     emails.cache()
 
@@ -150,19 +153,23 @@ def load_emails(
 
     print(f"Processed {total_count:,} emails: {parsed_count:,} successful, {error_count:,} errors")
 
-    # Count unique threads in successful parses
+    # Count unique threads and users in successful parses
     thread_count = parsed_emails.select("thread_id").distinct().count()
-    print(f"Found {thread_count:,} unique threads")
+    user_count = parsed_emails.select("user").distinct().count()
+    print(f"Found {thread_count:,} unique threads across {user_count:,} users")
 
-    # Save successfully parsed emails (drop parse_error column since it's always null)
-    print(f"Writing parsed emails to {output_file}...")
-    parsed_emails.drop("parse_error").write.mode("overwrite").parquet(str(output_file))
+    # Save successfully parsed emails partitioned by user
+    # Drop parse_error (always null) and message (redundant with parsed fields)
+    print(f"Writing parsed emails to {output_file} (partitioned by user)...")
+    parsed_emails.drop("parse_error", "message").write.mode("overwrite").partitionBy(
+        "user"
+    ).parquet(str(output_file))
     print(f"Saved {parsed_count:,} parsed emails to {output_file}")
 
-    # Save error emails if any exist
+    # Save error emails partitioned by user if any exist
     if error_count > 0:
-        print(f"Writing error emails to {error_file}...")
-        error_emails.write.mode("overwrite").parquet(str(error_file))
+        print(f"Writing error emails to {error_file} (partitioned by user)...")
+        error_emails.write.mode("overwrite").partitionBy("user").parquet(str(error_file))
         print(f"Saved {error_count:,} error emails to {error_file}")
 
     spark.stop()
