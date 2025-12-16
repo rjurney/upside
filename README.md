@@ -186,9 +186,11 @@ Actually `cat -n` would be blazing fast for line numbering, then split on line n
 
 The global window is expensive but acceptable for 517K records. For 10M+ emails/day (per the assignment), pre-splitting at ingest time would be the way to go, although with PySpark we are talking about PySpark Streaming and mini-batches, something this implementation does not consider. We would need to use a graph database to connect to threaded emails. New content would come from a stream of emails, and we would need to update the threads in the graph database as new emails arrive.
 
-### JWZ Threading
+### Scaling JWZ Threading
 
-I lead the [GraphFrames])
+I lead the [GraphFrames](https://graphframes.github.io/) project, which includes [connected components](https://graphframes.io/04-user-guide/05-traversals.html#connected-components) that is the first and most important step in threading emails. However, implementing the full JWZ threading algorithm is non-trivial and requires more time than I have for this assignment. The basic idea is to build a graph where nodes are messages and edges represent reply relationships, then find connected components to identify threads.
+
+I did start this implementation using the `jwzthreading` library, which provides a Python implementation of the JWZ threading algorithm. However, integrating this with PySpark and scaling it to large datasets would require additional work.
 
 ## Time-Boxing Note
 
