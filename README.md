@@ -4,7 +4,7 @@ A PySpark-based pipeline for parsing, normalizing, and threading the Enron email
 
 ## Overview
 
-This project extracts and normalizes emails from the Enron email dataset, including nested and quoted messages, and implements a threading algorithm to group related emails into conversations. The pipeline processes approximately 500,000 messages (~3 GB uncompressed) and outputs structured data in Parquet format.
+This project extracts and normalizes emails from the Enron email dataset, implements threading algorithms to group related emails into conversations, and provides graph-based analysis using connected components. The pipeline processes approximately 517,000 messages and outputs structured data in Parquet format.
 
 ## Features
 
@@ -12,20 +12,24 @@ This project extracts and normalizes emails from the Enron email dataset, includ
 
   - Extracts message metadata (id, date, subject, from, to, cc, bcc)
   - Normalizes email addresses to lowercase
-  - Removes quoted history to extract clean message bodies
-  - Surfaces inline forwards/replies as separate rows
+  - Parses email headers using the `mail-parser` library
+  - Handles malformed multi-line CSV records
 
 - **Email Threading**: Groups related messages into conversation threads
 
-  - Assigns stable `thread_id` to messages in the same conversation
-  - Uses header fields and heuristics for thread detection
+  - JWZ threading algorithm (vendored Python 3 compatible implementation)
+  - Uses In-Reply-To and References headers
+  - Falls back to normalized subject heuristics
 
-- **Scalable Architecture**: Built on PySpark for distributed processing
+- **Graph Analysis** (WIP): Connected components for thread clustering
+  - GraphFrames-based graph construction
+  - Message-ID to In-Reply-To edge relationships
 
 ## Requirements
 
 - Python 3.12
 - Poetry (for dependency management)
+- Java 11+ (for PySpark)
 - ~4 GB disk space for the Enron dataset
 
 ## Setup
@@ -54,147 +58,230 @@ poetry install
 upside download
 ```
 
-This will download the Enron email dataset from Kaggle to the `data/` directory.
+This downloads the Enron email dataset from Kaggle to `data/emails.csv`.
 
 ## Usage
 
 ### Run the full pipeline
 
 ```bash
-# Parse emails and extract threads
+# 1. Download the dataset
+upside download
+
+# 2. Parse emails into structured Parquet
 upside parse
 
-# Build knowledge graph (hope I have time)
-upside kg
+# 3. Thread emails using JWZ algorithm
+upside thread
+```
+
+### Experimental
+
+```bash
+# Find email threads using GraphFrames connected components (WIP)
+upside dev spark
 ```
 
 ### CLI Commands
 
-- `upside download` - Download the Enron dataset from Kaggle
-- `upside parse` - Parse emails and assign thread IDs
-- `upside kg` - Build knowledge graph from parsed emails
+```
+Commands:
+  download  Download the Enron email dataset from Kaggle.
+  parse     Parse the Enron emails CSV into Parquet format.
+  thread    Thread emails using the JWZ threading algorithm.
+  spark     [WIP] Find email threads using GraphFrames connected components.
+```
 
-Run `poetry run upside --help` for more information on available commands.
+Run `upside --help` for more information on available commands and options.
+
+### Command Details
+
+#### `upside download`
+
+Downloads the Enron email dataset from Kaggle to `data/emails.csv`.
+
+#### `upside parse`
+
+Parses the raw CSV and extracts structured email fields.
+
+```bash
+upside parse --input data/emails.csv --output data/parsed_emails.parquet --error data/error_emails.parquet
+```
+
+- Successfully parsed emails go to `parsed_emails.parquet` (partitioned by user)
+- Emails that fail to parse go to `error_emails.parquet` with error details
+
+#### `upside thread`
+
+Threads emails using the JWZ algorithm.
+
+```bash
+upside thread --input data/parsed_emails.parquet --output data/threaded_emails.parquet
+```
+
+Adds threading fields: `jwz_thread_id`, `thread_depth`, `parent_id`
+
+#### `upside spark` (WIP)
+
+Finds email threads using GraphFrames connected components.
+
+```bash
+upside spark --input data/parsed_emails.parquet --output data/graph_threads.parquet
+```
 
 ## Output Schema
 
-The pipeline produces structured data with the following fields:
+### Parsed Emails (`parsed_emails.parquet`)
 
-| Field        | Type          | Description                                              |
-| ------------ | ------------- | -------------------------------------------------------- |
-| `id`         | string        | Stable message identifier (consistent across executions) |
-| `date`       | timestamp     | UTC ISO-8601 timestamp                                   |
-| `subject`    | string        | Email subject (original casing)                          |
-| `from`       | string        | Sender email address (lowercase)                         |
-| `to`         | array[string] | Recipient email addresses (lowercase)                    |
-| `cc`         | array[string] | CC recipients (lowercase)                                |
-| `bcc`        | array[string] | BCC recipients (lowercase)                               |
-| `body_clean` | string        | Message body with quoted history removed                 |
-| `thread_id`  | string        | Conversation thread identifier                           |
+| Field                | Type          | Description                              |
+| -------------------- | ------------- | ---------------------------------------- |
+| `file`               | string        | Original file path in Enron dataset      |
+| `id`                 | string        | Message-ID header                        |
+| `date`               | timestamp     | Email timestamp                          |
+| `subject`            | string        | Email subject (original casing)          |
+| `from`               | string        | Sender email address (lowercase)         |
+| `from_name`          | string        | Sender display name                      |
+| `to`                 | array[string] | Recipient email addresses (lowercase)    |
+| `cc`                 | array[string] | CC recipients (lowercase)                |
+| `bcc`                | array[string] | BCC recipients (lowercase)               |
+| `body_clean`         | string        | Plain text message body                  |
+| `references`         | array[string] | References header message IDs            |
+| `in_reply_to`        | string        | In-Reply-To header message ID            |
+| `normalized_subject` | string        | Subject with Re:/Fwd: prefixes removed   |
+| `thread_id`          | string        | Thread ID (from headers or subject hash) |
+| `user`               | string        | User extracted from file path            |
+
+### Threaded Emails (`threaded_emails.parquet`)
+
+Includes all fields from parsed emails plus:
+
+| Field           | Type   | Description                     |
+| --------------- | ------ | ------------------------------- |
+| `jwz_thread_id` | string | Thread ID from JWZ algorithm    |
+| `thread_depth`  | int    | Depth in thread tree (0 = root) |
+| `parent_id`     | string | Parent message ID in thread     |
 
 ## Architecture
 
-### Parsing Data Flow
+### Data Flow
 
-1. **Download**: Fetch Enron email dataset from Kaggle API
-2. **Parse**: Extract and normalize emails using PySpark
-   - Read CSV files containing raw email data
-   - Parse email headers and bodies
-   - Detect and extract nested/quoted messages
-   - Clean message bodies
-3. **Thread**: Assign thread IDs based on conversation relationships
-   - Use In-Reply-To and References headers
-   - Apply subject-based heuristics for missing headers
-4. **Output**: Save structured data in Parquet format
+```
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│   Kaggle    │────▶│  emails.csv │────▶│   PySpark   │────▶│  Parquet    │
+│   Dataset   │     │  (raw CSV)  │     │   Parser    │     │  (parsed)   │
+└─────────────┘     └─────────────┘     └─────────────┘     └─────────────┘
+                                                                   │
+                                                                   ▼
+                                        ┌─────────────┐     ┌─────────────┐
+                                        │  Parquet    │◀────│     JWZ     │
+                                        │ (threaded)  │     │  Threading  │
+                                        └─────────────┘     └─────────────┘
+```
 
-### Technologies
+### Parsing Strategy
 
-- **Python 3.12**: Core language
-- **PySpark**: Distributed data processing
-- **Poetry**: Dependency management and packaging
-- **Click**: Command-line interface
-- **BAML**: LLM-based structured extraction for knowledge graph
+The Enron CSV has malformed multi-line message fields. The parser uses:
+
+1. Regex pattern matching to identify record boundaries (`"file_path","Message-ID:`)
+2. PySpark window functions with cumulative sum to assign record IDs
+3. Line aggregation to reconstruct complete messages
+4. `mail-parser` library for header extraction
+
+### Threading Algorithms
+
+**JWZ Threading** (implemented):
+
+- Based on Jamie Zawinski's threading algorithm
+- Builds a tree structure from References/In-Reply-To headers
+- Groups messages by normalized subject as fallback
+- Vendored Python 3 compatible implementation
+
+**GraphFrames Connected Components** (WIP):
+
+- Vertices: unique message IDs
+- Edges: id → in_reply_to relationships
+- Connected components identify thread clusters
+
+## Project Structure
+
+```
+upside/
+├── upside/
+│   ├── cli.py                 # Command-line interface
+│   ├── download.py            # Kaggle dataset download
+│   └── parse/
+│       ├── __init__.py
+│       ├── load.py            # CSV parsing with PySpark
+│       ├── extract.py         # Email field extraction
+│       ├── thread.py          # JWZ threading
+│       ├── jwzthreading.py    # Vendored JWZ library (Python 3)
+│       └── graph.py           # GraphFrames connected components
+├── tests/                     # Test suite
+├── data/                      # Dataset storage (gitignored)
+├── pyproject.toml             # Poetry configuration
+└── README.md
+```
 
 ## Development
 
 ### Running Tests
 
 ```bash
-# Run all tests
 pytest tests/
 ```
 
 ### Code Quality
 
+Setup pre-commit hooks:
+
 ```bash
-# Lint and format
-pre-commit
+pre-commit install
 ```
 
-Which runs the following checks:
+Run code quality checks:
 
 ```bash
-# Format code
+# Run all checks
+pre-commit
+
+# Individual tools
 black upside tests
 isort upside tests
-
-# Lint code
 flake8
-
-# Type checking
 mypy
 ```
 
-## Project Structure
+### Technologies
 
-```
-upside/
-├── upside/                 # Core application code
-│   ├── download/          # Dataset download logic
-│   ├── parse/             # Email parsing and normalization
-│   ├── kg/                # Knowledge graph building
-│   └── cli.py             # Command-line interface
-├── tests/                 # Test suite
-├── data/                  # Dataset storage (gitignored)
-├── pyproject.toml         # Poetry configuration
-└── README.md              # This file
-```
+- **Python 3.12**: Core language
+- **PySpark 3.5**: Distributed data processing
+- **PyArrow**: Parquet I/O for threading
+- **mail-parser**: Email header parsing
+- **GraphFrames**: Graph analytics (WIP)
+- **Poetry**: Dependency management
+- **Click**: Command-line interface
 
-## Scale-Up Parsing Architecture
+## Scaling Considerations
 
-### File Format Challenges
+### CSV Parsing
 
-The file format this is in is let's say... not ideal for distributed processing. I used PySpark to scale up from the start as much as possible - something I've advocated for more than a decade when building things that need to scale. The challenge to parsing the emails is that we need to identify record boundaries before we can partition, but the Window / cumulative sum approach requires global ordering. There's no way around this without pre-splitting the file or doing a two-pass approach.
+The global window for record boundary detection is expensive but acceptable for 517K records. For larger datasets:
 
-Here's what (edited by me) Claude has to say:
+- Write a proper [Hadoop InputFormat](https://hadoop.apache.org/docs/stable/api/org/apache/hadoop/mapred/InputFormat.html) to split on record boundaries. Spark builds on Hadoop InputFormats.
+- Pre-split the CSV file with overlap and handle bad records at chunk boundaries.
+- Use line numbering (`cat -n`) with overlap-aware splitting. Works well: cat -n data/emails.csv | sed 's/^[ \t]_\([0-9]_\)[ \t]\*/\1,/' > /tmp/cat_emails.csv
 
-```
-  window = Window.orderBy("line_id")
-  lines = lines.withColumn("record_id", F.sum("is_record_start").over(window))
+### JWZ Threading
 
-  This is a global window with no partitionBy() - it's required to track record boundaries across the entire CSV file to extract the structure from the wonky CSV. We need cumulative sum across ALL lines to assign record IDs.
+Currently collects all emails to driver memory. For larger datasets... I don't understand the algorithm well enough yet to shard it properly. Connected components is part of it, and GraphFrames scales that well. Then some graph database could be updated incrementally as new emails arrive. I usually avoid graph databases when building from scratch, but they seem appropriate here.
 
-  The problem: we don't know which user an email belongs to until AFTER we've:
-  1. Identified record boundaries (the "file_path","Message-ID: pattern)
-  2. Grouped the multi-line messages together
-  3. Extracted the file path
-```
+### Production Pipeline
 
-A two-pass approach or pre-splitting the file would be most reliable. I would salt the lines or split the file crudely using "Message-ID" as a string, or even using some utility that can split large files using bytes into smaller chunks at line boundaries with overlap. Then each chunk can be processed independently in Spark, and we can partition by user after extracting the file path.
+For 10M+ emails/day:
 
-Actually `cat -n` would be blazing fast for line numbering, then split on line numbers with overlap. A simple Python script could do this too. You could build on `cat -n data/emails.csv | sed 's/^[ \t]*\([0-9]*\)[ \t]*/\1,/' > /tmp/cat_emails.csv`.
-
-The global window is expensive but acceptable for 517K records. For 10M+ emails/day (per the assignment), pre-splitting at ingest time would be the way to go, although with PySpark we are talking about PySpark Streaming and mini-batches, something this implementation does not consider. We would need to use a graph database to connect to threaded emails. New content would come from a stream of emails, and we would need to update the threads in the graph database as new emails arrive.
-
-### Scaling JWZ Threading
-
-I lead the [GraphFrames](https://graphframes.github.io/) project, which includes [connected components](https://graphframes.io/04-user-guide/05-traversals.html#connected-components) that is the first and most important step in threading emails. However, implementing the full JWZ threading algorithm is non-trivial and requires more time than I have for this assignment. The basic idea is to build a graph where nodes are messages and edges represent reply relationships, then find connected components to identify threads.
-
-I did start this implementation using the `jwzthreading` library, which provides a Python implementation of the JWZ threading algorithm. However, integrating this with PySpark and scaling it to large datasets would require additional work.
-
-## Time-Boxing Note
-
-This project was developed as a take-home assignment with a 4-hour time limit for coding. Some features may be incomplete or require further refinement. See TODOs in the code and the "Future Work" section above for planned improvements.
+- Use PySpark Streaming with mini-batches
+- Store threads in a graph database (Neo4j, Neptune)
+- Update thread relationships incrementally as new emails arrive
 
 ## License
 

@@ -22,7 +22,7 @@ def create_jwz_message(row: dict[str, Any]) -> jwzthreading.Message:
         Message object for threading.
     """
     msg = jwzthreading.Message()
-    msg.message_id = row.get("message_id") or ""
+    msg.message_id = row.get("id") or ""
     msg.subject = row.get("normalized_subject") or ""
 
     # Combine references and in_reply_to for threading
@@ -50,7 +50,7 @@ def flatten_thread_tree(
     container: jwzthreading.Container,
     thread_id: str,
     depth: int = 0,
-    parent_message_id: str | None = None,
+    parent_id: str | None = None,
 ) -> list[dict[str, Any]]:
     """Flatten a thread tree into a list of records with hierarchy info.
 
@@ -59,11 +59,11 @@ def flatten_thread_tree(
     container : jwzthreading.Container
         Root container of the thread tree.
     thread_id : str
-        ID of the thread (root message_id or subject hash).
+        ID of the thread (root id or subject hash).
     depth : int
         Current depth in the thread tree.
-    parent_message_id : str or None
-        Message ID of the parent message.
+    parent_id : str or None
+        ID of the parent message.
 
     Returns
     -------
@@ -79,13 +79,13 @@ def flatten_thread_tree(
             record = dict(row_data)
             record["jwz_thread_id"] = thread_id
             record["thread_depth"] = depth
-            record["parent_message_id"] = parent_message_id
+            record["parent_id"] = parent_id
             results.append(record)
-            parent_message_id = record.get("message_id")
+            parent_id = record.get("id")
 
     # Process children
     for child in container.children:
-        results.extend(flatten_thread_tree(child, thread_id, depth + 1, parent_message_id))
+        results.extend(flatten_thread_tree(child, thread_id, depth + 1, parent_id))
 
     return results
 
@@ -115,12 +115,12 @@ def thread_emails_local(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     # Flatten all thread trees
     results = []
     for subject, container in subject_table.items():
-        # Use the root message_id as thread_id, or hash the subject
+        # Use the root id as thread_id, or hash the subject
         thread_id = None
         if container.message and container.message.message_id:
             thread_id = container.message.message_id
         else:
-            # Find first message_id in the tree
+            # Find first id in the tree
             for child in container.children:
                 if child.message and child.message.message_id:
                     thread_id = child.message.message_id

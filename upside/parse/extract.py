@@ -13,10 +13,10 @@ from pyspark.sql.types import ArrayType, StringType, StructField, StructType, Ti
 # Schema for extracted email fields (includes error field for tracking parse failures)
 EMAIL_SCHEMA = StructType(
     [
-        StructField("message_id", StringType(), nullable=True),
+        StructField("id", StringType(), nullable=True),
         StructField("date", TimestampType(), nullable=True),
         StructField("subject", StringType(), nullable=True),
-        StructField("from_email", StringType(), nullable=True),
+        StructField("from", StringType(), nullable=True),
         StructField("from_name", StringType(), nullable=True),
         StructField("to", ArrayType(StringType()), nullable=True),
         StructField("cc", ArrayType(StringType()), nullable=True),
@@ -185,7 +185,7 @@ def parse_email_message(message: str) -> tuple[Any, ...]:
 
 
 def generate_thread_id(
-    message_id: Optional[str],
+    email_id: Optional[str],
     references: Optional[list[str]],
     in_reply_to: Optional[str],
     normalized_subject: Optional[str],
@@ -195,13 +195,13 @@ def generate_thread_id(
     Threading logic:
     1. If References header exists, use the first (root) message ID
     2. Else if In-Reply-To exists, use that
-    3. Else if we have the message_id and it's not a reply, use message_id
+    3. Else if we have the email id and it's not a reply, use id
     4. Else hash the normalized subject
 
     Parameters
     ----------
-    message_id : str or None
-        This email's Message-ID.
+    email_id : str or None
+        This email's Message-ID (id field).
     references : list[str] or None
         List of referenced message IDs.
     in_reply_to : str or None
@@ -222,9 +222,9 @@ def generate_thread_id(
     if in_reply_to:
         return in_reply_to
 
-    # For non-replies, use message_id as thread root
-    if message_id:
-        return message_id
+    # For non-replies, use email id as thread root
+    if email_id:
+        return email_id
 
     # Fallback: hash normalized subject
     if normalized_subject:
@@ -257,10 +257,10 @@ def extract_email_fields(emails_df: DataFrame) -> DataFrame:
     extracted = parsed.select(
         F.col("file"),
         F.col("message"),
-        F.col("parsed.message_id").alias("message_id"),
+        F.col("parsed.id").alias("id"),
         F.col("parsed.date").alias("date"),
         F.col("parsed.subject").alias("subject"),
-        F.col("parsed.from_email").alias("from_email"),
+        F.col("parsed.from").alias("from"),
         F.col("parsed.from_name").alias("from_name"),
         F.col("parsed.to").alias("to"),
         F.col("parsed.cc").alias("cc"),
@@ -276,7 +276,7 @@ def extract_email_fields(emails_df: DataFrame) -> DataFrame:
     result = extracted.withColumn(
         "thread_id",
         thread_udf(
-            F.col("message_id"),
+            F.col("id"),
             F.col("references"),
             F.col("in_reply_to"),
             F.col("normalized_subject"),

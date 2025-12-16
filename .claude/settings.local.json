@@ -28,7 +28,8 @@
       "WebSearch",
       "Bash(java:*)",
       "Bash(/usr/libexec/java_home)",
-      "Bash(JAVA_HOME=/opt/homebrew/opt/openjdk@11 poetry run upside:*)"
+      "Bash(JAVA_HOME=/opt/homebrew/opt/openjdk@11 poetry run upside:*)",
+      "Bash(~/.local/bin/pre-commit run --files tests/test_extract.py)"
     ],
     "deny": [],
     "ask": [],

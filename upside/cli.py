@@ -3,11 +3,20 @@
 import click
 
 from upside.download import download_enron_dataset
+from upside.parse.graph import build_email_graph
 from upside.parse.load import load_emails
 from upside.parse.thread import thread_emails
 
 
-@click.group()
+class OrderedGroup(click.Group):
+    """A Click group that preserves command definition order."""
+
+    def list_commands(self, ctx: click.Context) -> list[str]:
+        """Return commands in definition order."""
+        return list(self.commands.keys())
+
+
+@click.group(cls=OrderedGroup)
 def main() -> None:
     """Upside - Enron Email Analysis Tool."""
     pass
@@ -66,3 +75,35 @@ def thread(input_path: str, output_path: str) -> None:
     click.echo(f"Threading emails from {input_path}...")
     output = thread_emails(input_path, output_path)
     click.echo(f"Threaded emails saved to: {output}")
+
+
+@main.group(cls=OrderedGroup)
+def dev() -> None:
+    """[WIP] Development and experimental commands."""
+    pass
+
+
+@dev.command()
+@click.option(
+    "--input",
+    "input_path",
+    default="data/parsed_emails.parquet",
+    help="Path to input Parquet file with parsed emails.",
+)
+@click.option(
+    "--output",
+    "output_path",
+    default="data/graph_threads.parquet",
+    help="Path to output Parquet file with graph thread IDs.",
+)
+@click.option(
+    "--checkpoint",
+    "checkpoint_dir",
+    default="/tmp/graphframes-checkpoint",
+    help="Directory for GraphFrames checkpointing.",
+)
+def components(input_path: str, output_path: str, checkpoint_dir: str) -> None:
+    """Find email threads using GraphFrames connected components."""
+    click.echo(f"Building email graph from {input_path}...")
+    output = build_email_graph(input_path, output_path, checkpoint_dir)
+    click.echo(f"Graph threads saved to: {output}")
