@@ -41,7 +41,7 @@ def build_email_graph(
     spark = (
         SparkSession.builder.appName("EnronEmailGraph")
         .config("spark.driver.memory", "4g")
-        .config("spark.jars.packages", "graphframes:graphframes:0.8.3-spark3.5-s_2.12")
+        .config("spark.jars.packages", "io.graphframes:graphframes-spark3_2.12:0.10.0")
         .getOrCreate()
     )
 
