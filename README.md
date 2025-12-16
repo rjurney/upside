@@ -79,17 +79,17 @@ upside thread
 
 ```bash
 # Find email threads using GraphFrames connected components (WIP)
-upside dev spark
+upside dev components  # buggy
 ```
 
 ### CLI Commands
 
 ```
 Commands:
-  download  Download the Enron email dataset from Kaggle.
-  parse     Parse the Enron emails CSV into Parquet format.
-  thread    Thread emails using the JWZ threading algorithm.
-  spark     [WIP] Find email threads using GraphFrames connected components.
+  download    Download the Enron email dataset from Kaggle.
+  parse       Parse the Enron emails CSV into Parquet format.
+  thread      Thread emails using the JWZ threading algorithm.
+  components  [WIP] Find email threads using GraphFrames connected components.
 ```
 
 Run `upside --help` for more information on available commands and options.
@@ -121,7 +121,7 @@ upside thread --input data/parsed_emails.parquet --output data/threaded_emails.p
 
 Adds threading fields: `jwz_thread_id`, `thread_depth`, `parent_id`
 
-#### `upside spark` (WIP)
+#### `upside components` (WIP)
 
 Finds email threads using GraphFrames connected components.
 
